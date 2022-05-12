@@ -25,21 +25,22 @@
 
 class Mapping
 {
-public:
-		ros::NodeHandle				n; // объект, который хранит информацию о node, которая выполняется
-		ros::Publisher				pubMapping; // публикуем карту
-		ros::Subscriber				currentPoseLocal; // подписываемся на текущую локальную позицию
-		ros::Subscriber				currnetLaserScan; // текущие данные с лидара
-		ros::Publisher				marker_pub;
-		
+public:		
 		Mapping(ros::NodeHandle n);
 		~Mapping() = default;
+
 		void	publisherMapping();
 
-		void			visualizationOccupancyGrid();
-		void				saveMapInFile(char* fileName);
+		void	visualizationOccupancyGrid();
+		void	saveMapInFile(char* fileName);
 
 	private:
+		ros::NodeHandle				n_; // объект, который хранит информацию о node, которая выполняется
+		// ros::Publisher				pubMapping_; // публикуем карту
+		ros::Subscriber				currentPoseLocal_; // подписываемся на текущую локальную позицию
+		ros::Subscriber				currnetLaserScan_; // текущие данные с лидара
+		ros::Publisher				markerPub_;
+
 	    Eigen::Vector3d				currentPosition_; // положение ЛА  система координат на усмотрение разработчика
 		Eigen::Quaterniond			orientationQuat_;
 		sensor_msgs::LaserScan		laserScanValue_;
@@ -72,13 +73,10 @@ public:
 
 		void			initNode();
 		void			localPoseCallback(geometry_msgs::PoseStamped pose_);
-		// void	laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg);
 		void			laserCallback(sensor_msgs::LaserScan msg);
 		void			fillDataLaser();
 		void			fillOccupancyGrid();
-		// void			buildMap(double& x, double& y, double& z);
-		unsigned int	buildMap(double& x, double& size, double& originAxes);
-		unsigned int	buildMap(const double& x, const double& y, const double& z, const ParallelepipedSize& size, const Coordinate3d& originAxes);
+		unsigned int	buildMap(double x, double y, double z, const ParallelepipedSize& size, const Coordinate3d& originAxes);
 		void			readDataLidar();
 		Coordinate3d*	rangeToSensorCoord(const double* range);
 		Coordinate3d*	sensorCoordToBodyCoord(const Coordinate3d* sensorCoord);
@@ -87,8 +85,7 @@ public:
 		void			deleteArray2d(double** array, unsigned int arraySize);
 		void			deleteBuffData(BuffData* data, unsigned int dataSize);
 		void			allocationBuffData();
-		bool			checkIntervalMinMax(const double& data, const double& min, const double& max);
-		double			calculateCorrelation(Map map, Map particle);
+		bool			checkIntervalMinMax(double data, double min, double max);
 		double			calculateMeanValueMap(const std::vector<double>& mapValue);
 		
 };

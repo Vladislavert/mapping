@@ -2,7 +2,7 @@
 
 Mapping::Mapping(ros::NodeHandle n)
 {
-	this->n = n;
+	n_ = n;
 	lidar_.ranges = nullptr;
 	lidar_.angleRay = nullptr;
 	// инициализация положения лидара относительно СК БЛА
@@ -95,7 +95,7 @@ void			Mapping::publisherMapping()
 				}
 				countMeasurement_ = 0;
 			}
-			marker_pub.publish(parallelepipedGrid_);
+			markerPub_.publish(parallelepipedGrid_);
 		}
 	}
 	startCalculate_ = false;
@@ -107,9 +107,9 @@ void			Mapping::publisherMapping()
  */
 void			Mapping::initNode()
 {
-    currentPoseLocal = n.subscribe<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 1, &Mapping::localPoseCallback, this);
-	currnetLaserScan = n.subscribe<sensor_msgs::LaserScan>("/laser/scan", 1, &Mapping::laserCallback, this);
-	marker_pub = n.advertise<visualization_msgs::Marker>("/visualization_marker", 10);
+    currentPoseLocal_ = n_.subscribe<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 1, &Mapping::localPoseCallback, this);
+	currnetLaserScan_ = n_.subscribe<sensor_msgs::LaserScan>("/laser/scan", 1, &Mapping::laserCallback, this);
+	markerPub_ = n_.advertise<visualization_msgs::Marker>("/visualization_marker", 10);
 
 	points_.header.frame_id = "map";
 	points_.action = visualization_msgs::Marker::ADD;
@@ -305,7 +305,7 @@ void			Mapping::fillOccupancyGrid()
 	delete[] arrayHeight;
 }
 
-unsigned int	Mapping::buildMap(const double& x, const double& y, const double& z, const ParallelepipedSize& size, const Coordinate3d& originAxes)
+unsigned int	Mapping::buildMap(double x, double y, double z, const ParallelepipedSize& size, const Coordinate3d& originAxes)
 {
 	unsigned int indexX;
 	unsigned int indexY;
@@ -418,7 +418,7 @@ void	Mapping::allocationBuffData()
  * @return true - принадлежит диапазону от min до max
  * @return false - не принадлежит диапазону от min до max
  */
-bool	Mapping::checkIntervalMinMax(const double& data, const double& min, const double& max)
+bool	Mapping::checkIntervalMinMax(double data, double min, double max)
 {
 	bool result;
 
