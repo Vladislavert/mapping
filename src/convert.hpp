@@ -1,11 +1,11 @@
-#ifndef CONVERT_HPP
-#define CONVERT_HPP
+#ifndef MAPPING_CONVERT_HPP_
+#define MAPPING_CONVERT_HPP_
 
 #include "Eigen/Dense"
-#include "typeData.hpp"
+#include "dataTypes.hpp"
 
 void	convertXYZToVector3d(const Coordinate3d* coord, Eigen::Vector3d& vector3d);
 void	convertVector3dToXYZ(const Eigen::Vector3d& vector3d, Coordinate3d* coord);
 void	convertQuaternionToAngleEuler();
 
-#endif
+#endif // MAPPING_CONVERT_HPP_

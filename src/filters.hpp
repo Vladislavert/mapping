@@ -1,5 +1,5 @@
-#ifndef FILTERS_HPP
-#define FILTERS_HPP
+#ifndef MAPPING_FILTERS_HPP_
+#define MAPPING_FILTERS_HPP_
 
 #include <algorithm>
 #include <vector>
@@ -11,4 +11,4 @@ class Filters
 		double	median(double *data, unsigned int sizeData);
 };
 
-#endif
+#endif // MAPPING_FILTERS_HPP_

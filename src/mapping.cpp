@@ -2,46 +2,41 @@
 
 Mapping::Mapping(ros::NodeHandle n)
 {
-	// initNode();
 	this->n = n;
-	lidar.ranges = nullptr;
-	lidar.angleRay = nullptr;
+	lidar_.ranges = nullptr;
+	lidar_.angleRay = nullptr;
 	// инициализация положения лидара относительно СК БЛА
-	lidarInBodyCoord << 0, 0, 0;
-	lidarInAngleBodyCoord.pitch = 0;
-	lidarInAngleBodyCoord.roll = 0;
-	lidarInAngleBodyCoord.yaw = 0;
-	timeSecsCurrent = 0;
-	timeSecsPast = ros::Time::now().toSec();
-	secs = 0;
-	dt = 0;
-	countMeasurement = 0;
-	sizeBuffer = 1;
-	buffData.x = nullptr;
-	buffData.y = nullptr;
-	buffData.z = nullptr;
-	sizePointsPast = 0;
-	startCalculate = false;
+	lidarInBodyCoord_ << 0, 0, 0;
+	lidarInAngleBodyCoord_.pitch = 0;
+	lidarInAngleBodyCoord_.roll = 0;
+	lidarInAngleBodyCoord_.yaw = 0;
+	timeSecsCurrent_ = 0;
+	timeSecsPast_ = ros::Time::now().toSec();
+	secs_ = 0;
+	dt_ = 0;
+	countMeasurement_ = 0;
+	sizeBuffer_ = 1;
+	buffData_.x = nullptr;
+	buffData_.y = nullptr;
+	buffData_.z = nullptr;
+	sizePointsPast_ = 0;
+	startCalculate_ = false;
 
 	// инициализация параметров сетки
-	gridStep.length = 0.2;
-	gridStep.width = 0.2;
-	gridStep.height = 0.2;
+	gridStep_.length = 0.2;
+	gridStep_.width = 0.2;
+	gridStep_.height = 0.2;
 	// размер карты в метрах
-	mapSize.x = 100;
-	mapSize.y = 100;
-	mapSize.z = 20;
-	// расстояние обновления карты
-	updateDistance = 5;
-	updateDistanceHeight = 5;
+	mapSize_.x = 100;
+	mapSize_.y = 100;
+	mapSize_.z = 20;
 
-	origin.x = -40;
-	origin.y = -40;
-	origin.z = -3;
+	origin_.x = -40;
+	origin_.y = -40;
+	origin_.z = -3;
 
 	initNode();
-
-	fillOccupancyGrid(mapSize);
+	fillOccupancyGrid();
 }
 
 
@@ -54,64 +49,56 @@ void			Mapping::publisherMapping()
 	Coordinate3d* sensorCoord;
 	Coordinate3d* bodyCoord;
 	Coordinate3d* mapCoord;
-	// clearData(10);
-	// readDataLidar();
-	// visualizationOccupancyGrid();
+
 	// вызов обновления карты
-	if (startCalculate == true)
+	if (startCalculate_ == true)
 	{
 		fillDataLaser();
-		if (lidar.ranges != nullptr && lidar.angleRay != nullptr)
+		if (lidar_.ranges != nullptr && lidar_.angleRay != nullptr)
 		{
-			sensorCoord = rangeToSensorCoord(lidar.ranges);
+			sensorCoord = rangeToSensorCoord(lidar_.ranges);
 			bodyCoord = sensorCoordToBodyCoord(sensorCoord);
 			mapCoord = bodyCoordToMapCoord(bodyCoord);
-			parallelepipedGrid.header.stamp = ros::Time::now();
+			parallelepipedGrid_.header.stamp = ros::Time::now();
 
-			if (sizePointsPast != sizeRay)
-				countMeasurement = 0;
-			if (countMeasurement == 0)
+			if (sizePointsPast_ != sizeRay_)
+				countMeasurement_ = 0;
+			if (countMeasurement_ == 0)
 			{
-				deleteBuffData(&buffData, sizePointsPast);
+				deleteBuffData(&buffData_, sizePointsPast_);
 				allocationBuffData();
 			}
-			for	(unsigned int i = 0, j = 0; i < sizeRay; i++)
+			for	(unsigned int i = 0, j = 0; i < sizeRay_; i++)
 			{
-				buffData.x[j][countMeasurement] = mapCoord[i].x;
-				buffData.y[j][countMeasurement] = mapCoord[i].y;
-				buffData.z[j][countMeasurement] = mapCoord[i].z;
+				buffData_.x[j][countMeasurement_] = mapCoord[i].x;
+				buffData_.y[j][countMeasurement_] = mapCoord[i].y;
+				buffData_.z[j][countMeasurement_] = mapCoord[i].z;
 				j++;
 			}
-			countMeasurement++;
-			if (countMeasurement == sizeBuffer)
+			countMeasurement_++;
+			if (countMeasurement_ == sizeBuffer_)
 			{
-				for (unsigned int i = 0; i < sizeRay; i++)
+				for (unsigned int i = 0; i < sizeRay_; i++)
 				{
-					p.x = filters.median(buffData.x[i], sizeBuffer);
-					p.y = filters.median(buffData.y[i], sizeBuffer);
-					p.z = filters.median(buffData.z[i], sizeBuffer);
+					p_.x = filters_.median(buffData_.x[i], sizeBuffer_);
+					p_.y = filters_.median(buffData_.y[i], sizeBuffer_);
+					p_.z = filters_.median(buffData_.z[i], sizeBuffer_);
 					// временная переменная, которую стоит переместить в другое место
-					unsigned int index = buildMap(p.x, p.y, p.z, gridStep, origin);
-					if (map.isOccupied[index] == 1)
+					unsigned int index = buildMap(p_.x, p_.y, p_.z, gridStep_, origin_);
+					if (map_.isOccupied[index] == 1)
 					{
-						p.x = map.x[index];
-						p.y = map.y[index];
-						p.z = map.z[index];
-						parallelepipedGrid.points.push_back(p);
+						p_.x = map_.x[index];
+						p_.y = map_.y[index];
+						p_.z = map_.z[index];
+						parallelepipedGrid_.points.push_back(p_);
 					}
-					// p.x = map[buildMap(p.x, gridStep.length, origin.x)].x;
-					// p.y = map[buildMap(p.y, gridStep.width, origin.y)].y;
-					// p.z = map[buildMap(p.z, gridStep.height, origin.z)].z;
-					
 				}
-				double r_AB = calculateCorrelation(map, map);
-				ROS_INFO("r_AB = %lf", r_AB);
-				countMeasurement = 0;
+				countMeasurement_ = 0;
 			}
-			marker_pub.publish(parallelepipedGrid);
+			marker_pub.publish(parallelepipedGrid_);
 		}
 	}
-	startCalculate = false;
+	startCalculate_ = false;
 }
 
 /**
@@ -124,34 +111,28 @@ void			Mapping::initNode()
 	currnetLaserScan = n.subscribe<sensor_msgs::LaserScan>("/laser/scan", 1, &Mapping::laserCallback, this);
 	marker_pub = n.advertise<visualization_msgs::Marker>("/visualization_marker", 10);
 
-	points.header.frame_id = "map";
-	points.action = visualization_msgs::Marker::ADD;
-	points.pose.orientation.w = 0;
-	points.id = 0;
-	points.type = visualization_msgs::Marker::POINTS;
+	points_.header.frame_id = "map";
+	points_.action = visualization_msgs::Marker::ADD;
+	points_.pose.orientation.w = 0;
+	points_.id = 0;
+	points_.type = visualization_msgs::Marker::POINTS;
 
-	points.scale.x = 0.05;
-  	points.scale.y = 0.05;
-	points.scale.z = 0.05;
-	points.color.g = 1.0f;
-  	points.color.a = 1.0;
+	points_.scale.x = 0.05;
+  	points_.scale.y = 0.05;
+	points_.scale.z = 0.05;
+	points_.color.g = 1.0f;
+  	points_.color.a = 1.0;
 
-	parallelepipedGrid.header.frame_id = "map";
-	parallelepipedGrid.action = visualization_msgs::Marker::ADD;
-	parallelepipedGrid.pose.orientation.w = 0;
-	parallelepipedGrid.id = 1;
-	// parallelepipedGrid.type = visualization_msgs::Marker::parallelepipedGrid;
-	// parallelepipedGrid.type = 6;
-	parallelepipedGrid.type = visualization_msgs::Marker::CUBE_LIST;
-
-	// parallelepipedGrid.scale.x = gridStep.length;
-  	// parallelepipedGrid.scale.y = gridStep.width;
-	// parallelepipedGrid.scale.z = gridStep.height;
-	parallelepipedGrid.scale.x = gridStep.length;
-  	parallelepipedGrid.scale.y = gridStep.width;
-	parallelepipedGrid.scale.z = gridStep.height;
-	parallelepipedGrid.color.g = 1.0f;
-  	parallelepipedGrid.color.a = 1.0;
+	parallelepipedGrid_.header.frame_id = "map";
+	parallelepipedGrid_.action = visualization_msgs::Marker::ADD;
+	parallelepipedGrid_.pose.orientation.w = 0;
+	parallelepipedGrid_.id = 1;
+	parallelepipedGrid_.type = visualization_msgs::Marker::CUBE_LIST;
+	parallelepipedGrid_.scale.x = gridStep_.length;
+  	parallelepipedGrid_.scale.y = gridStep_.width;
+	parallelepipedGrid_.scale.z = gridStep_.height;
+	parallelepipedGrid_.color.g = 1.0f;
+  	parallelepipedGrid_.color.a = 1.0;
 }
 
 /**
@@ -161,21 +142,20 @@ void			Mapping::initNode()
  */
 void			Mapping::localPoseCallback(geometry_msgs::PoseStamped pose_)
 {
-	currentPosition[0] = pose_.pose.position.x;
-	currentPosition[1] = pose_.pose.position.y; 
-	currentPosition[2] = pose_.pose.position.z;
+	currentPosition_[0] = pose_.pose.position.x;
+	currentPosition_[1] = pose_.pose.position.y; 
+	currentPosition_[2] = pose_.pose.position.z;
 	
-	orientationQuat.w() = pose_.pose.orientation.w;
-	orientationQuat.x() = pose_.pose.orientation.x;  
-	orientationQuat.y() = pose_.pose.orientation.y;
-	orientationQuat.z() = pose_.pose.orientation.z;
+	orientationQuat_.w() = pose_.pose.orientation.w;
+	orientationQuat_.x() = pose_.pose.orientation.x;  
+	orientationQuat_.y() = pose_.pose.orientation.y;
+	orientationQuat_.z() = pose_.pose.orientation.z;
 }
 
-// создать стуктуру, которая будет описывать данные с датчика(дальность, угол)
 void			Mapping::laserCallback(sensor_msgs::LaserScan msg)
 {
-	startCalculate = true;
-	laserScanValue = msg;
+	startCalculate_ = true;
+	laserScanValue_ = msg;
 }
 
 /**
@@ -184,23 +164,23 @@ void			Mapping::laserCallback(sensor_msgs::LaserScan msg)
  */
 void			Mapping::fillDataLaser()
 {
-	sizePointsPast = sizeRay;
-	sizeRay = 0;
+	sizePointsPast_ = sizeRay_;
+	sizeRay_ = 0;
 	double	countAngle;
 
-	countAngle = laserScanValue.angle_min;
-	for	(unsigned int i = 0; i < laserScanValue.ranges.size(); i++)
-		if (checkIntervalMinMax(laserScanValue.ranges[i], laserScanValue.range_min, laserScanValue.range_max))
-			sizeRay++;
-	lidar.ranges = new double[sizeRay];
-	lidar.angleRay = new double[sizeRay];
-	for	(unsigned int i = 0, j = 0; i < laserScanValue.ranges.size(); i++)
+	countAngle = laserScanValue_.angle_min;
+	for	(unsigned int i = 0; i < laserScanValue_.ranges.size(); i++)
+		if (checkIntervalMinMax(laserScanValue_.ranges[i], laserScanValue_.range_min, laserScanValue_.range_max))
+			sizeRay_++;
+	lidar_.ranges = new double[sizeRay_];
+	lidar_.angleRay = new double[sizeRay_];
+	for	(unsigned int i = 0, j = 0; i < laserScanValue_.ranges.size(); i++)
 	{
-		countAngle += laserScanValue.angle_increment;
-		if (checkIntervalMinMax(laserScanValue.ranges[i], laserScanValue.range_min, laserScanValue.range_max))
+		countAngle += laserScanValue_.angle_increment;
+		if (checkIntervalMinMax(laserScanValue_.ranges[i], laserScanValue_.range_min, laserScanValue_.range_max))
 		{
-			lidar.ranges[j] = laserScanValue.ranges[i];
-			lidar.angleRay[j] = countAngle;
+			lidar_.ranges[j] = laserScanValue_.ranges[i];
+			lidar_.angleRay[j] = countAngle;
 			j++;
 		}
 	}
@@ -214,12 +194,12 @@ void			Mapping::fillDataLaser()
  */
 Coordinate3d*	Mapping::rangeToSensorCoord(const double* range)
 {
-	Coordinate3d* sensorCoord = new Coordinate3d[sizeRay];
+	Coordinate3d* sensorCoord = new Coordinate3d[sizeRay_];
 
-	for	(unsigned int i = 0; i < sizeRay; i++)
+	for	(unsigned int i = 0; i < sizeRay_; i++)
 	{
-		sensorCoord[i].x = range[i] * cos(lidar.angleRay[i]);
-		sensorCoord[i].y = range[i] * sin(lidar.angleRay[i]);
+		sensorCoord[i].x = range[i] * cos(lidar_.angleRay[i]);
+		sensorCoord[i].y = range[i] * sin(lidar_.angleRay[i]);
 		sensorCoord[i].z = 0;
 	}
 	return (sensorCoord);
@@ -235,12 +215,12 @@ Coordinate3d*	Mapping::sensorCoordToBodyCoord(const Coordinate3d* sensorCoord)
 {
 	Eigen::Vector3d	sensorCoordVect3d;
 	Eigen::Vector3d	bodyCoordVect3d;
-	Coordinate3d* bodyCoord = new Coordinate3d[sizeRay];
+	Coordinate3d* bodyCoord = new Coordinate3d[sizeRay_];
 
-	for	(unsigned int i = 0; i < sizeRay; i++)
+	for	(unsigned int i = 0; i < sizeRay_; i++)
 	{
 		convertXYZToVector3d(&sensorCoord[i], sensorCoordVect3d);
-		bodyCoordVect3d = lidarInBodyCoord + math.rotationMatrix(lidarInAngleBodyCoord.pitch, lidarInAngleBodyCoord.roll, lidarInAngleBodyCoord.yaw).transpose() * sensorCoordVect3d;
+		bodyCoordVect3d = lidarInBodyCoord_ + Math::rotationMatrix(lidarInAngleBodyCoord_.pitch, lidarInAngleBodyCoord_.roll, lidarInAngleBodyCoord_.yaw).transpose() * sensorCoordVect3d;
 		convertVector3dToXYZ(bodyCoordVect3d, &bodyCoord[i]);
 	}
 	return (bodyCoord);
@@ -254,81 +234,57 @@ Coordinate3d*	Mapping::sensorCoordToBodyCoord(const Coordinate3d* sensorCoord)
  */
 Coordinate3d*	Mapping::bodyCoordToMapCoord(Coordinate3d* bodyCoord)
 {
+	double r, p, y;
 	Eigen::Vector3d	bodyCoordVect3d;
 	Eigen::Vector3d	mapCoordVect3d;
-	Coordinate3d* mapCoord = new Coordinate3d[sizeRay];
-	// ROLL, PITCH, YAW
-	// 2 1 0 - YAW, PITHC, ROLL
-	// Eigen::Vector3d angleEuler = orientationQuat.toRotationMatrix().eulerAngles(0, 1, 2);
-	Eigen::Vector3d angleEuler = Eigen::Matrix3d(orientationQuat).eulerAngles(0, 1, 2);
+	Coordinate3d* mapCoord = new Coordinate3d[sizeRay_];
 
-	// использование tf
-	tf2::Quaternion q(orientationQuat.x(), orientationQuat.y(), orientationQuat.z(), orientationQuat.w());
-	// tf2::Quaternion q(-0.019, 0.037, 0.127, 0.991);
+	tf2::Quaternion q(orientationQuat_.x(), orientationQuat_.y(), orientationQuat_.z(), orientationQuat_.w());
 	tf2::Matrix3x3 m(q);
-	double r, p, y;
 	m.getRPY(r, p, y);
 
-	// ROS_INFO("ANGLE YAW = %f\n", y * 180/M_PI);
-	for	(unsigned int i = 0; i < sizeRay; i++)
+	for	(unsigned int i = 0; i < sizeRay_; i++)
 	{
 		convertXYZToVector3d(&bodyCoord[i], bodyCoordVect3d);
-		mapCoordVect3d = currentPosition  + math.rotationMatrix(r, p, y).transpose() * bodyCoordVect3d;
+		mapCoordVect3d = currentPosition_  + Math::rotationMatrix(r, p, y).transpose() * bodyCoordVect3d;
 		convertVector3dToXYZ(mapCoordVect3d, &mapCoord[i]);
 	}
 
 	return (mapCoord);
 }
 
-// sizeMap - размер карты, поменять в дальнешйем на три параметра(данный параметр будет зависит от дальности лидара и
-			// в дальнейшем будет суммироваться, по мере движения дрона на расстояние, которое пролетел дрон) 
-void			Mapping::fillOccupancyGrid(Coordinate3d& mapSize)
+void			Mapping::fillOccupancyGrid()
 {
-	// ParallelepipedSize numberCoordinateGrid;
+	unsigned int length = round(mapSize_.x/gridStep_.length);
+	unsigned int width = round(mapSize_.y/gridStep_.width);
+	unsigned int height = round(mapSize_.z/gridStep_.height);
 
-	unsigned int length = round(mapSize.x/gridStep.length);
-	unsigned int width = round(mapSize.y/gridStep.width);
-	unsigned int height = round(mapSize.z/gridStep.height);
-	// ROS_INFO("start function");
-	// ROS_INFO("length = %d", length);
-	// выделение памяти под координаты сетки
-	// map = new Coordinate3d[length * width * height];
-
-	// подумать о упрощении алгоритма, для заполнения сетки
 	double* arrayLength = new double[length]; // координаты центра сетки в длину
 	double* arrayWidth = new double[width]; // координаты центра сетки в ширину
 	double* arrayHeight = new double[height]; // координаты центра сетки в высоту
 
-	// map[0].x = origin.x + gridStep.length/2;
-	// map[0].y = origin.y + gridStep.width/2;
-	// map[0].z = origin.z + gridStep.height/2;
-	arrayLength[0] = origin.x + gridStep.length / 2;
-	arrayWidth[0] = origin.y + gridStep.width / 2;
-	arrayHeight[0] = origin.z + gridStep.height / 2;
+	arrayLength[0] = origin_.x + gridStep_.length / 2;
+	arrayWidth[0] = origin_.y + gridStep_.width / 2;
+	arrayHeight[0] = origin_.z + gridStep_.height / 2;
 	for	(unsigned int i = 1; i < length; i++)
 	{
-		arrayLength[i] = arrayLength[i - 1] + gridStep.length;
+		arrayLength[i] = arrayLength[i - 1] + gridStep_.length;
 	}
 	for	(unsigned int i = 1; i < width; i++)
 	{
-		arrayWidth[i] = arrayWidth[i - 1] + gridStep.width;
+		arrayWidth[i] = arrayWidth[i - 1] + gridStep_.width;
 	}
 	for	(unsigned int i = 1; i < height; i++)
 	{
-		arrayHeight[i] = arrayHeight[i - 1] + gridStep.height;
+		arrayHeight[i] = arrayHeight[i - 1] + gridStep_.height;
 	}
 
 	for	(unsigned int count = 0, i = 0, j = 0, k = 0; count < (length * width * height); count++)
 	{
-		// map[count].x = arrayLength[i];
-		
-		// ROS_INFO("map[%d].x = %lf", i, map[count].x);
-		// map[count].y = arrayWidth[j];
-		// map[count].z = arrayHeight[k];
-		map.x.push_back(arrayLength[i]);
-		map.y.push_back(arrayWidth[j]);
-		map.z.push_back(arrayHeight[k]);
-		map.isOccupied.push_back(0);
+		map_.x.push_back(arrayLength[i]);
+		map_.y.push_back(arrayWidth[j]);
+		map_.z.push_back(arrayHeight[k]);
+		map_.isOccupied.push_back(0);
 		if (i < length - 1)
 			i++;
 		else
@@ -344,35 +300,9 @@ void			Mapping::fillOccupancyGrid(Coordinate3d& mapSize)
 			}
 		}
 	}
-}
-
-// void				Mapping::updateMap()
-// {
-// 	if (currentPosition[0] >= updateDistance || currentPosition[0] >= updateDistance)
-// 	{
-
-// 	}
-
-// }
-
-// подумать о передачи параметров карты в аргумент функции
-// void		Mapping::buildMap(double& x, double& y, double& z)
-// {
-// 	unsigned int indexX;
-// 	unsigned int indexY;
-// 	unsigned int indexZ;
-
-// 	indexX = trunc(x / gridStep.length);
-// }
-
-// подумать о передачи параметров карты в аргумент функции
-unsigned int		Mapping::buildMap(double& arg, double& size, double& originAxes)
-{
-	unsigned int index;
-	index = trunc((arg / size) - originAxes);
-	// ROS_INFO("INDEX = %lf", arg / size);
-
-	return (index);
+	delete[] arrayLength;
+	delete[] arrayWidth;
+	delete[] arrayHeight;
 }
 
 unsigned int	Mapping::buildMap(const double& x, const double& y, const double& z, const ParallelepipedSize& size, const Coordinate3d& originAxes)
@@ -386,9 +316,9 @@ unsigned int	Mapping::buildMap(const double& x, const double& y, const double& z
 	indexY = trunc((y - originAxes.y) / size.width);
 	indexZ = trunc((z - originAxes.z) / size.height);
 
-	index = indexX + (indexY * (mapSize.x / size.length))
-				   + (indexZ * (mapSize.x / size.length) * (mapSize.y / size.length));
-	map.isOccupied[index] = 1;
+	index = indexX + (indexY * (mapSize_.x / size.length))
+				   + (indexZ * (mapSize_.x / size.length) * (mapSize_.y / size.length));
+	map_.isOccupied[index] = 1;
 	// ROS_INFO("INDEX = %lf", index);
 
 	return (index);
@@ -400,9 +330,9 @@ unsigned int	Mapping::buildMap(const double& x, const double& y, const double& z
  */
 void	Mapping::readDataLidar()
 {
-	for (unsigned int i = 0; i < laserScanValue.ranges.size(); i++)
+	for (unsigned int i = 0; i < laserScanValue_.ranges.size(); i++)
 	{
-		ROS_INFO("DATA LIDAR: %f", laserScanValue.ranges[i]);
+		ROS_INFO("DATA LIDAR: %f", laserScanValue_.ranges[i]);
 	}
 }
 
@@ -413,14 +343,14 @@ void	Mapping::readDataLidar()
  */
 void	Mapping::clearData(double secClearData)
 {
-	timeSecsCurrent = ros::Time::now().toSec();
-	dt = timeSecsCurrent - timeSecsPast;
-	timeSecsPast = timeSecsCurrent;
-	secs += dt;
-	if (secs > secClearData)
+	timeSecsCurrent_ = ros::Time::now().toSec();
+	dt_ = timeSecsCurrent_ - timeSecsPast_;
+	timeSecsPast_ = timeSecsCurrent_;
+	secs_ += dt_;
+	if (secs_ > secClearData)
 	{
-		points.points.clear();
-		secs = 0;
+		points_.points.clear();
+		secs_ = 0;
 	}
 }
 
@@ -463,57 +393,20 @@ void	Mapping::deleteBuffData(BuffData* data, unsigned int dataSize)
 }
 
 /**
- * @brief Выделение памяти для структуры buffData
+ * @brief Выделение памяти для структуры  BuffData
  * 
  */
 void	Mapping::allocationBuffData()
 {
-	buffData.x = new double*[sizeRay];
-	buffData.y = new double*[sizeRay];
-	buffData.z = new double*[sizeRay];
-	for (unsigned int k = 0; k < sizeRay; k++)
+	buffData_.x = new double*[sizeRay_];
+	buffData_.y = new double*[sizeRay_];
+	buffData_.z = new double*[sizeRay_];
+	for (unsigned int k = 0; k < sizeRay_; k++)
 	{
-		buffData.x[k] = new double[sizeBuffer];
-		buffData.y[k] = new double[sizeBuffer];
-		buffData.z[k] = new double[sizeBuffer];
+		buffData_.x[k] = new double[sizeBuffer_];
+		buffData_.y[k] = new double[sizeBuffer_];
+		buffData_.z[k] = new double[sizeBuffer_];
 	}
-}
-
-/**
- * @brief Ограничивает данные в диапазоне от min до max
- * 
- * @param data данные, которые требуется ограничить
- * @param min минимальное значение
- * @param max максимальное значение
- * @return значение, лежащее в диапазоне от min до max
- */
-double	Mapping::saturation(const double& data, const double& min, const double& max)
-{
-	double result;
-
-	if (data > max)
-		result = max;
-	else if (data < min)
-		result = min;
-
-	return (result);
-}
-
-/**
- * @brief Ограничивает минимальное значение данных
- * 
- * @param data данные, которые требуется ограничить
- * @param min минимальное значение
- * @return значение, которое не меньше min
- */
-double	Mapping::saturationMin(const double& data, const double& min)
-{
-	double result;
-
-	if (data < min)
-		result = min;
-
-	return (result);
 }
 
 /**
@@ -536,96 +429,12 @@ bool	Mapping::checkIntervalMinMax(const double& data, const double& min, const d
 	return (result);
 }
 
-/**
- * @brief Визуализация карты
- * 
- */
-void			Mapping::visualizationOccupancyGrid()
-{
-	// Coordinate3d* sensorCoord;
-	// Coordinate3d* bodyCoord;
-	// Coordinate3d* mapCoord;
-	// clearData(10);
-	// readDataLidar();
-	if (countMeasurement < 3)
-	{
-		ParallelepipedSize numberCoordinateGrid;
-
-		parallelepipedGrid.header.stamp = ros::Time::now();
-		numberCoordinateGrid.length = round(mapSize.x/gridStep.length);
-		numberCoordinateGrid.width = round(mapSize.y/gridStep.width);
-		numberCoordinateGrid.height = round(mapSize.z/gridStep.height);
-		ROS_INFO("p.x = %lf", p.x);
-		for (unsigned int i = 0; i < numberCoordinateGrid.length * numberCoordinateGrid.width * numberCoordinateGrid.height; i++)
-		{
-			p.x = map.x[i];
-			// ROS_INFO("p.x = %lf", p.x);
-			p.y = map.y[i];
-			p.z = map.z[i];
-			// ROS_INFO("p.x = %lf, p.y = %lf, p.z = %lf", p.x, p.y, p.z);
-			parallelepipedGrid.points.push_back(p);
-		}
-		// ROS_INFO("--------------------------------------------------------------------");
-		marker_pub.publish(parallelepipedGrid);
-		countMeasurement++;
-	}
-}
-
-double		Mapping::calculateCorrelation(Map map, Map particle)
-{
-	double	r_AB; // коэффициент корреляции
-	double	meanMapValue; // среднее значение карты(0 или 1)
-	double	meanMapValueParticle; // среднее значение карты для частицы
-	double	sumMapDotParticle;
-	double	sumMapSquare;
-	double	sumParticleSquare;
-
-	meanMapValue = calculateMeanValueMap(map.isOccupied);
-	meanMapValueParticle = calculateMeanValueMap(particle.isOccupied);
-	sumMapDotParticle = 0;
-	sumMapSquare = 0;
-	sumParticleSquare = 0;
-	for	(unsigned int i = 0; i < map.isOccupied.size(); i++)
-	{
-		sumMapDotParticle += (map.isOccupied[i] - meanMapValue)
-						  * (particle.isOccupied[i] - meanMapValueParticle);
-		sumMapSquare += math.squaring((map.isOccupied[i] - meanMapValue));
-		sumParticleSquare += math.squaring((particle.isOccupied[i] - meanMapValueParticle));
-	}
-	r_AB = sumMapDotParticle / (sqrt(sumMapSquare * sumParticleSquare));
-
-	return (r_AB);
-}
-
-// убрать в math.cpp
-double		Mapping::calculateMeanValueMap(const std::vector<double>& mapValue)
-{
-	if (mapValue.size() == 0)
-	{
-		throw "vector size = 0";
-	}
-	else
-	{
-		double mean;
-		double sumMapValue;
-
-		sumMapValue = 0;
-		for	(unsigned int i = 0; i < mapValue.size(); i++)
-		{
-			sumMapValue += mapValue[i];
-		}
-		mean = sumMapValue / (mapValue.size());
-
-		return (mean);
-	}
-}
-
-int			Mapping::saveMapInFile(char* fileName)
+void			Mapping::saveMapInFile(char* fileName)
 {
 	std::ofstream file(fileName);
 
 	file.clear();
-	for	(unsigned int i = 0; i < map.isOccupied.size(); i++)
-		file << map.x[i] << " " << map.y[i] << " " << map.z[i] << " " << map.isOccupied[i] << "\n";
+	for	(unsigned int i = 0; i < map_.isOccupied.size(); i++)
+		file << map_.x[i] << " " << map_.y[i] << " " << map_.z[i] << " " << map_.isOccupied[i] << "\n";
 	file.close();
 }

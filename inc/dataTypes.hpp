@@ -1,5 +1,5 @@
-#ifndef TYPE_DATA_HPP
-#define TYPE_DATA_HPP
+#ifndef MAPPING_DATA_TYPES_HPP_
+#define MAPPING_DATA_TYPES_HPP_
 
 #include "vector"
 
@@ -63,4 +63,4 @@ struct	ParallelepipedSize
 typedef Eigen::Matrix<double, Eigen::Dynamic, 1>				VectorXd_t;
 typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>	MatrixXd_t;
 
-#endif
+#endif // MAPPING_DATA_TYPES_HPP_

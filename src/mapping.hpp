@@ -1,5 +1,5 @@
-#ifndef MAPPING_HPP
-#define MAPPING_HPP
+#ifndef MAPPING_MAPPING_HPP_
+#define MAPPING_MAPPING_HPP_
 
 #include <ros/ros.h>
 #include <Eigen/Dense>
@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <fstream>
 
-#include "typeData.hpp"
+#include "dataTypes.hpp"
 #include "convert.hpp"
 #include "math.hpp"
 #include "filters.hpp"
@@ -36,52 +36,46 @@ public:
 		~Mapping() = default;
 		void	publisherMapping();
 
-		// для отладки
 		void			visualizationOccupancyGrid();
-		int				saveMapInFile(char* fileName);
+		void				saveMapInFile(char* fileName);
 
 	private:
-	    Eigen::Vector3d				currentPosition; // положение ЛА  система координат на усмотрение разработчика по данному параметру осуществляется обратная связь
-		Eigen::Quaterniond			orientationQuat;
-		sensor_msgs::LaserScan		laserScanValue;
-		unsigned int 				sizeRay; // кол-во лучей, которые доходят до препятствия и принадлежат диапазону 
-		Eigen::Vector3d				lidarInBodyCoord; // положение лидара относительно СК тела
-		AngleEuler					lidarInAngleBodyCoord;
-		Math						math;
-		Filters						filters;
-		visualization_msgs::Marker	points; // точки, получаемые лидаром в СК карты
-		visualization_msgs::Marker	parallelepipedGrid; // параллелепипед, для заполнения карты
-		geometry_msgs::Point		p;
-		double						timeSecsCurrent;
-		double						timeSecsPast;
-		double						dt;
-		double						secs;
-		unsigned int				countMeasurement; // считает кол-во измерений
-		BuffData					buffData; // буфер измеренных значений, кол-во которых задаётся переменной sizeBuffer.
+	    Eigen::Vector3d				currentPosition_; // положение ЛА  система координат на усмотрение разработчика
+		Eigen::Quaterniond			orientationQuat_;
+		sensor_msgs::LaserScan		laserScanValue_;
+		unsigned int 				sizeRay_; // кол-во лучей, которые доходят до препятствия и принадлежат диапазону 
+		Eigen::Vector3d				lidarInBodyCoord_; // положение лидара относительно СК тела
+		AngleEuler					lidarInAngleBodyCoord_;
+		Filters						filters_;
+		visualization_msgs::Marker	points_; // точки, получаемые лидаром в СК карты
+		visualization_msgs::Marker	parallelepipedGrid_; // параллелепипед, для заполнения карты
+		geometry_msgs::Point		p_;
+		double						timeSecsCurrent_;
+		double						timeSecsPast_;
+		double						dt_;
+		double						secs_;
+		unsigned int				countMeasurement_; // счётчик кол-ва измерений
+		BuffData					buffData_; // буфер измеренных значений, кол-во которых задаётся переменной sizeBuffer.
 											  // Требуется для медианного фильтра
-		unsigned int				sizePointsPast; // кол-во точек, который столкнулись с препятствием на предыдущем шаге
-		unsigned int				sizeBuffer; // размер буффера для хранения массива
-		bool						startCalculate; // запуск расчётом при подачи новых данных
-		DataLidar					lidar; // данные о лучах, которые встретились с препятствием
+		unsigned int				sizePointsPast_; // кол-во точек, который столкнулись с препятствием на предыдущем шаге
+		unsigned int				sizeBuffer_; // размер буффера для хранения массива
+		bool						startCalculate_; // запуск расчёта при подачи новых данных
+		DataLidar					lidar_; // данные о лучах, которые встретились с препятствием
 
-		// параметры occupancy grid(подумать о переносе в другое место)
+		// параметры occupancy grid
 		// пользовательские настройки
-		ParallelepipedSize			gridStep; // шаг сетки по трём осям
-		Coordinate3d				origin; // начало координат сетки в СК карты
-		Coordinate3d				mapSize; // размер карты по трём осям(обновлять, так как динамически меняется)[м]
-		double						updateDistance; // дистанция на которой карта будет обновляться(по x и y обновление идёт одновременно)[м]
-		double						updateDistanceHeight; // дистанция на которой карта будет обновляться в высоту
-		// end
+		ParallelepipedSize			gridStep_; // шаг сетки по трём осям
+		Coordinate3d				origin_; // начало координат сетки в СК карты
+		Coordinate3d				mapSize_; // размер карты по трём осям(обновлять, так как динамически меняется)[м]
 
-		// Coordinate3d*				arrayCoordinateGrid; // массив координат сетки
-		Map							map; // карта
+		Map							map_; // карта
 
 		void			initNode();
 		void			localPoseCallback(geometry_msgs::PoseStamped pose_);
 		// void	laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg);
 		void			laserCallback(sensor_msgs::LaserScan msg);
 		void			fillDataLaser();
-		void			fillOccupancyGrid(Coordinate3d& mapSize);
+		void			fillOccupancyGrid();
 		// void			buildMap(double& x, double& y, double& z);
 		unsigned int	buildMap(double& x, double& size, double& originAxes);
 		unsigned int	buildMap(const double& x, const double& y, const double& z, const ParallelepipedSize& size, const Coordinate3d& originAxes);
@@ -93,13 +87,10 @@ public:
 		void			deleteArray2d(double** array, unsigned int arraySize);
 		void			deleteBuffData(BuffData* data, unsigned int dataSize);
 		void			allocationBuffData();
-		double			saturation(const double& data, const double& min, const double& max);
-		double			saturationMin(const double& data, const double& min);
 		bool			checkIntervalMinMax(const double& data, const double& min, const double& max);
-		// void			updateMap();
 		double			calculateCorrelation(Map map, Map particle);
 		double			calculateMeanValueMap(const std::vector<double>& mapValue);
 		
 };
 
-#endif
+#endif // MAPPING_MAPPING_HPP_

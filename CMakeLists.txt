@@ -6,7 +6,7 @@ project(mapping)
 # link_directories("/usr/lib/" "/usr/include" )
 
 
-# set(COMMON_FLAGS "-Wall -Wextra -Werror")
+set(COMMON_FLAGS "-Wall -Wextra -Werror")
 set(CMAKE_CXX_FLAGS "${COMMON_FLAGS}")
 
 find_package (Eigen3  REQUIRED)
