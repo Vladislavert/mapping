@@ -12,19 +12,10 @@ Eigen::Matrix3d	Math::rotationMatrix(double pitch, double roll, double yaw)// п
 {
 	Eigen::Matrix3d R;
 
-
-	// R << 	c(pitch)*c(yaw),							s(pitch)*c(yaw), 							-s(yaw),
-	// 		c(pitch)*s(roll)*s(yaw) - s(pitch)*c(roll),	s(pitch)*s(roll)*s(yaw) + c(pitch)*c(roll),	s(roll)*c(yaw),
-	// 		c(pitch)*s(yaw)*c(roll) + s(pitch)*s(roll),	s(pitch)*c(roll)*s(yaw) - c(pitch)*s(roll),	c(roll)*c(yaw);
 	R << 	c(yaw)*c(roll),							s(yaw)*c(roll), 							-s(roll),
 			c(yaw)*s(pitch)*s(roll) - s(yaw)*c(pitch),	s(yaw)*s(pitch)*s(roll) + c(yaw)*c(pitch),	s(pitch)*c(roll),
 			c(yaw)*s(roll)*c(pitch) + s(yaw)*s(pitch),	s(yaw)*c(pitch)*s(roll) - c(yaw)*s(pitch),	c(pitch)*c(roll);
-	// R << 	c(yaw)*c(pitch),										-c(pitch)*s(yaw), 									s(pitch),
-	// 		s(roll)*s(pitch)*c(yaw) - c(roll)*s(yaw),		-s(roll)*s(pitch)*s(yaw) + c(roll)*c(yaw),	s(roll)*c(pitch),
-	// 		-c(roll)*sin(pitch)*cos(yaw)+sin(roll)*sin(yaw),	c(roll)*s(pitch)*s(yaw) + s(roll)*c(yaw),	c(roll)*c(pitch);
-	// R << 	c(pitch)*c(yaw),	s(roll)*s(pitch)*c(yaw) - c(roll)*s(yaw),	c(roll)*sin(pitch)*cos(yaw)+sin(roll)*sin(yaw),
-	// 		c(pitch)*s(yaw),	s(roll)*s(pitch)*s(yaw) + c(roll)*c(yaw),	c(roll)*s(pitch)*s(yaw) + s(roll)*c(yaw),
-	// 		-s(pitch),				s(roll)*c(pitch),									c(roll)*c(pitch);
+
 	return (R);
 }
 

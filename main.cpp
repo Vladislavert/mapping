@@ -1,7 +1,4 @@
-// #include "rosBridge.hpp"
 #include "mapping.hpp"
-#include <geometry_msgs/PoseStamped.h>
-
 
 int main(int argc, char **argv)
 {
@@ -9,8 +6,6 @@ int main(int argc, char **argv)
 	ros::NodeHandle n;
 
 	ros::Rate rate(20);
-
-	// rosBridge bridge(n);
 
 	ROS_INFO("Ready");
 	

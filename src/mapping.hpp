@@ -27,7 +27,7 @@ class Mapping
 {
 public:		
 		Mapping(ros::NodeHandle n);
-		~Mapping() = default;
+		~Mapping();
 
 		void	publisherMapping();
 
@@ -36,7 +36,6 @@ public:
 
 	private:
 		ros::NodeHandle				n_; // объект, который хранит информацию о node, которая выполняется
-		// ros::Publisher				pubMapping_; // публикуем карту
 		ros::Subscriber				currentPoseLocal_; // подписываемся на текущую локальную позицию
 		ros::Subscriber				currnetLaserScan_; // текущие данные с лидара
 		ros::Publisher				markerPub_;
@@ -84,10 +83,10 @@ public:
 		void			clearData(double secClearData);
 		void			deleteArray2d(double** array, unsigned int arraySize);
 		void			deleteBuffData(BuffData* data, unsigned int dataSize);
+		void			deleteDataLidar(DataLidar* data);
 		void			allocationBuffData();
 		bool			checkIntervalMinMax(double data, double min, double max);
 		double			calculateMeanValueMap(const std::vector<double>& mapValue);
-		
 };
 
 #endif // MAPPING_MAPPING_HPP_

@@ -6,7 +6,7 @@ double	Filters::median(double *data, unsigned int sizeData)
 	unsigned int	indexCenter;
 
 	std::sort(data, data + sizeData);
-	indexCenter = round(sizeData/2);
+	indexCenter = round(sizeData / 2);
 	result = data[indexCenter];
 
 	return (result);

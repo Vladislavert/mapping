@@ -39,6 +39,12 @@ Mapping::Mapping(ros::NodeHandle n)
 	fillOccupancyGrid();
 }
 
+Mapping::~Mapping()
+{
+	deleteBuffData(&buffData_, sizeRay_);
+	deleteDataLidar(&lidar_);
+}
+
 
 /**
  * @brief Публикация сообщения 
@@ -83,7 +89,6 @@ void			Mapping::publisherMapping()
 					p_.x = filters_.median(buffData_.x[i], sizeBuffer_);
 					p_.y = filters_.median(buffData_.y[i], sizeBuffer_);
 					p_.z = filters_.median(buffData_.z[i], sizeBuffer_);
-					// временная переменная, которую стоит переместить в другое место
 					unsigned int index = buildMap(p_.x, p_.y, p_.z, gridStep_, origin_);
 					if (map_.isOccupied[index] == 1)
 					{
@@ -202,6 +207,7 @@ Coordinate3d*	Mapping::rangeToSensorCoord(const double* range)
 		sensorCoord[i].y = range[i] * sin(lidar_.angleRay[i]);
 		sensorCoord[i].z = 0;
 	}
+
 	return (sensorCoord);
 }
 
@@ -223,6 +229,7 @@ Coordinate3d*	Mapping::sensorCoordToBodyCoord(const Coordinate3d* sensorCoord)
 		bodyCoordVect3d = lidarInBodyCoord_ + Math::rotationMatrix(lidarInAngleBodyCoord_.pitch, lidarInAngleBodyCoord_.roll, lidarInAngleBodyCoord_.yaw).transpose() * sensorCoordVect3d;
 		convertVector3dToXYZ(bodyCoordVect3d, &bodyCoord[i]);
 	}
+
 	return (bodyCoord);
 }
 
@@ -319,7 +326,6 @@ unsigned int	Mapping::buildMap(double x, double y, double z, const Parallelepipe
 	index = indexX + (indexY * (mapSize_.x / size.length))
 				   + (indexZ * (mapSize_.x / size.length) * (mapSize_.y / size.length));
 	map_.isOccupied[index] = 1;
-	// ROS_INFO("INDEX = %lf", index);
 
 	return (index);
 }
@@ -390,6 +396,14 @@ void	Mapping::deleteBuffData(BuffData* data, unsigned int dataSize)
 		delete[] data->y;
 		delete[] data->z;
 	}
+}
+
+void	Mapping::deleteDataLidar(DataLidar* data)
+{
+	if (data->angleRay != nullptr)
+		delete[] data->angleRay;
+	if (data->ranges != nullptr)
+		delete[] data->ranges;
 }
 
 /**
